@@ -48,7 +48,7 @@ public class ClaseFecha {
 
     @Override
     public String toString() {
-        return clase != null && fecha != null?"" + fecha.format(DateTimeFormatter.ofPattern("dd/MMMM")) + " " + clase:getClass().getSimpleName() + " " + id;
+        return clase != null && fecha != null?"" + fecha.format(DateTimeFormatter.ofPattern("EEE dd/MMMM")) + " " + clase:getClass().getSimpleName() + " " + id;
     }
 
 }
