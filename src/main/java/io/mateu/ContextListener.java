@@ -28,7 +28,6 @@ public class ContextListener implements javax.servlet.ServletContextListener {
                         while (dentro) {
                             try {
                                 logarEstado();
-                                System.out.println("..." + LocalDateTime.now());
                                 Thread.sleep(60000l);
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
