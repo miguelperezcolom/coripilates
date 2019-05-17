@@ -33,6 +33,7 @@ public class Alumno {
     @NotInList
     private LocalDate antiguedad;
 
+    @MainSearchFilter
     private String nombre;
 
     private boolean activo = true;
@@ -47,6 +48,7 @@ public class Alumno {
 
     private String email;
 
+    @MainSearchFilter
     private String telefono;
 
     @TextArea
