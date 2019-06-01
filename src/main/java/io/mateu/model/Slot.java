@@ -5,17 +5,19 @@ import com.vaadin.icons.VaadinIcons;
 import io.mateu.mdd.core.annotations.Action;
 import io.mateu.mdd.core.annotations.Ignored;
 import io.mateu.mdd.core.annotations.ListColumn;
+import io.mateu.mdd.core.annotations.Order;
 import io.mateu.mdd.core.util.Helper;
 import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
+import java.time.format.DateTimeFormatter;
 
 @Entity
 @Getter
 @Setter
-public class Slot {
+public class Slot implements Comparable<Slot> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,13 +28,16 @@ public class Slot {
     private int version;
 
     @NotNull
-    @ListColumn
+    @ListColumn@Order(priority = 20)
     private DiaSemana dia;
 
     @NotNull
     @ManyToOne
-    @ListColumn
+    @ListColumn@Order(priority = 40)
     private Franja franja;
+
+    @Ignored@Column(name = "_order")@Order
+    private long order;
 
     @Override
     public int hashCode() {
@@ -61,4 +66,15 @@ public class Slot {
             });
         });
     }
+
+    @Override
+    public int compareTo(@org.jetbrains.annotations.NotNull Slot slot) {
+        return dia.compareTo(slot.dia);
+    }
+
+    @PrePersist
+    public void pre() {
+        order = Long.parseLong("" + dia.ordinal() + "" + franja.getDesde().format(DateTimeFormatter.ofPattern("HHmm")));
+    }
+
 }

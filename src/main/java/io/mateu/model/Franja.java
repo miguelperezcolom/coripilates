@@ -5,6 +5,7 @@ import com.vaadin.icons.VaadinIcons;
 import io.mateu.mdd.core.annotations.Action;
 import io.mateu.mdd.core.annotations.Ignored;
 import io.mateu.mdd.core.annotations.ListColumn;
+import io.mateu.mdd.core.annotations.Order;
 import io.mateu.mdd.core.util.Helper;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,7 +17,7 @@ import java.time.LocalTime;
 @Entity
 @Getter
 @Setter
-public class Franja {
+public class Franja implements Comparable<Franja> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,7 +27,7 @@ public class Franja {
     @Ignored
     private int version;
 
-    @ListColumn
+    @ListColumn@Order
     private LocalTime desde;
 
     @ListColumn
@@ -45,5 +46,10 @@ public class Franja {
     @Override
     public String toString() {
         return desde != null && hasta != null?"de " + desde + " a " + hasta:getClass().getSimpleName() + " " + id;
+    }
+
+    @Override
+    public int compareTo(@org.jetbrains.annotations.NotNull Franja franja) {
+        return desde.compareTo(franja.desde);
     }
 }

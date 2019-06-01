@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import com.vaadin.icons.VaadinIcons;
 import io.mateu.mdd.core.annotations.Action;
 import io.mateu.mdd.core.annotations.Ignored;
+import io.mateu.mdd.core.annotations.Order;
 import io.mateu.mdd.core.annotations.UseCheckboxes;
 import io.mateu.mdd.core.util.Helper;
 import lombok.Getter;
@@ -12,6 +13,7 @@ import lombok.Setter;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -37,7 +39,14 @@ public class Clase {
     @ManyToOne@NotNull
     private Slot slot;
 
+    @ManyToOne@NotNull
+    private Nivel nivel;
+
     private int capacidad;
+
+
+    @Ignored@Column(name = "_order")@Order
+    private long order;
 
 
     @Override
@@ -52,11 +61,11 @@ public class Clase {
 
     @Override
     public String toString() {
-        return actividad != null && slot != null?"" + actividad + "-" + slot:getClass().getSimpleName() + " " + id;
+        return actividad != null && nivel != null && slot != null?"" + actividad + " (" + nivel + ") -" + slot:getClass().getSimpleName() + " " + id;
     }
 
     @Action(order = 1, icon = VaadinIcons.PLUS_CIRCLE_O)
-    public static void crearClaseLuVi(@NotNull Franja franja, @NotNull Actividad actividad, int capacidad, boolean crearSlots) throws Throwable {
+    public static void crearClaseLuVi(@NotNull Franja franja, @NotNull Actividad actividad, @NotNull Nivel nivel, int capacidad, boolean crearSlots) throws Throwable {
         Helper.transact(em -> {
             Lists.newArrayList(DiaSemana.LUNES, DiaSemana.MARTES, DiaSemana.MIERCOLES, DiaSemana.JUEVES, DiaSemana.VIERNES).forEach(d -> {
                 Slot s = null;
@@ -75,11 +84,17 @@ public class Clase {
                     Clase c = new Clase();
                     c.setSlot(s);
                     c.setActividad(actividad);
+                    c.setNivel(nivel);
                     c.setCapacidad(capacidad);
                     em.persist(c);
                 }
             });
         });
+    }
+
+    @PrePersist
+    public void pre() {
+        order = Long.parseLong("" + slot.getDia().ordinal() + "" + slot.getFranja().getDesde().format(DateTimeFormatter.ofPattern("HHmm")));
     }
 
 }

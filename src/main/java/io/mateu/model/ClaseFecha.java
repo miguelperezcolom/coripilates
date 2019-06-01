@@ -1,6 +1,7 @@
 package io.mateu.model;
 
 import io.mateu.mdd.core.annotations.Ignored;
+import io.mateu.mdd.core.annotations.Order;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -12,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity@Getter@Setter
-public class ClaseFecha {
+public class ClaseFecha implements Comparable<ClaseFecha> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,7 +35,8 @@ public class ClaseFecha {
     private List<Asistencia> asistencias = new ArrayList<>();
 
 
-
+    @Ignored@Column(name = "_order")@Order
+    private long order;
 
     @Override
     public int hashCode() {
@@ -49,6 +51,18 @@ public class ClaseFecha {
     @Override
     public String toString() {
         return clase != null && fecha != null?"" + fecha.format(DateTimeFormatter.ofPattern("EEE dd/MMMM")) + " " + clase:getClass().getSimpleName() + " " + id;
+    }
+
+    @Override
+    public int compareTo(@org.jetbrains.annotations.NotNull ClaseFecha claseFecha) {
+        int r = fecha.compareTo(claseFecha.getFecha());
+        if (r == 0) r = clase.getSlot().getFranja().getDesde().compareTo(claseFecha.getClase().getSlot().getFranja().getDesde());
+        return r;
+    }
+
+    @PrePersist
+    public void pre() {
+        order = Long.parseLong(fecha.format(DateTimeFormatter.ofPattern("yyyyMMdd")) + clase.getSlot().getFranja().getDesde().format(DateTimeFormatter.ofPattern("HHmm")));
     }
 
 }

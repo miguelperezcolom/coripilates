@@ -13,6 +13,7 @@ import io.mateu.model.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import javax.validation.constraints.NotNull;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -28,8 +29,12 @@ public class PlaningView implements RpcView<PlaningView, LineaPlaning> {
     @MainSearchFilter@Width("150px")
     private Actividad actividad;
 
-    @MainSearchFilter@UseCheckboxes
-    private boolean matricula;
+    @MainSearchFilter@Width("150px")
+    private Nivel nivel;
+
+
+    @MainSearchFilter@NotNull
+    private Ver ver = Ver.Real;
 
     @Ignored
     private LocalDate inicio;
@@ -53,6 +58,9 @@ public class PlaningView implements RpcView<PlaningView, LineaPlaning> {
             List<Asistencia> asistencias = em.createQuery("select x from " + Asistencia.class.getName() + " x").getResultList();
             List<Alumno> alumnos = em.createQuery("select x from " + Alumno.class.getName() + " x where x.activo = true").getResultList();
 
+            List<Festivo> festivos = em.createQuery("select x from " + Festivo.class.getName() + " x").getResultList();
+            List<Vacaciones> vacaciones = em.createQuery("select x from " + Vacaciones.class.getName() + " x").getResultList();
+
             for (Franja f : (List<Franja>) em.createQuery("select x from " + Franja.class.getName() + " x order by x.desde").getResultList()) {
                 LineaPlaning l;
                 r.add(l = new LineaPlaning());
@@ -60,58 +68,85 @@ public class PlaningView implements RpcView<PlaningView, LineaPlaning> {
 
                 LocalDate d = filters.getInicio();
 
-                l.setLunes(getCelda(filters, f, d, DiaSemana.LUNES, clases, asistencias, alumnos));
+                l.setLunes(getCelda(filters, f, d, DiaSemana.LUNES, clases, asistencias, alumnos, festivos, vacaciones));
 
                 d = d.plusDays(1);
 
-                l.setMartes(getCelda(filters, f, d, DiaSemana.MARTES, clases, asistencias, alumnos));
+                l.setMartes(getCelda(filters, f, d, DiaSemana.MARTES, clases, asistencias, alumnos, festivos, vacaciones));
 
                 d = d.plusDays(1);
 
-                l.setMiercoles(getCelda(filters, f, d, DiaSemana.MIERCOLES, clases, asistencias, alumnos));
+                l.setMiercoles(getCelda(filters, f, d, DiaSemana.MIERCOLES, clases, asistencias, alumnos, festivos, vacaciones));
 
                 d = d.plusDays(1);
 
-                l.setJueves(getCelda(filters, f, d, DiaSemana.JUEVES, clases, asistencias, alumnos));
+                l.setJueves(getCelda(filters, f, d, DiaSemana.JUEVES, clases, asistencias, alumnos, festivos, vacaciones));
 
                 d = d.plusDays(1);
 
-                l.setViernes(getCelda(filters, f, d, DiaSemana.VIERNES, clases, asistencias, alumnos));
+                l.setViernes(getCelda(filters, f, d, DiaSemana.VIERNES, clases, asistencias, alumnos, festivos, vacaciones));
 
             }
         });
         return r;
     }
 
-    private CeldaPlaning getCelda(PlaningView filters, Franja f, LocalDate d, DiaSemana diaSemana, List<Clase> clases, List<Asistencia> asistencias, List<Alumno> alumnos) {
+    private CeldaPlaning getCelda(PlaningView filters, Franja f, LocalDate d, DiaSemana diaSemana, List<Clase> clases, List<Asistencia> asistencias, List<Alumno> alumnos, List<Festivo> festivos, List<Vacaciones> vacaciones) {
         int plazas = 0;
         int asistentes = 0;
 
-        for (Clase c : clases) {
-            if (diaSemana.equals(c.getSlot().getDia()) && f.equals(c.getSlot().getFranja())) {
-                if (filters.getActividad() == null || filters.getActividad().equals(c.getActividad())) plazas += c.getCapacidad();
+        boolean laborable = true;
+
+        if (laborable) for (Festivo v : festivos) {
+            if (d.equals(v.getFecha())) {
+                laborable = false;
+                break;
             }
         }
 
-        if (!filters.isMatricula()) {
-            for (Asistencia a : asistencias) {
-                if (d.equals(a.getClase().getFecha()) && f.equals(a.getClase().getClase().getSlot().getFranja())) {
-                    if (filters.getActividad() == null || filters.getActividad().equals(a.getClase().getClase().getActividad())) {
-                        if (filters.getAlumno() == null || filters.getAlumno().equals(a.getAlumno())) asistentes++;
-                    }
-                }
+        if (laborable) for (Vacaciones v : vacaciones) {
+            if (!d.isBefore(v.getInicio()) && !d.isAfter(v.getFin())) {
+                laborable = false;
+                break;
             }
-        } else {
-            for (Alumno a : alumnos) if (filters.getAlumno() == null || filters.getAlumno().equals(a)) {
-                for (Clase c : a.getMatricula()) if (diaSemana.equals(c.getSlot().getDia())) {
+        }
+
+        if (laborable) {
+            for (Clase c : clases) {
+                if (diaSemana.equals(c.getSlot().getDia()) && f.equals(c.getSlot().getFranja())) {
                     if (filters.getActividad() == null || filters.getActividad().equals(c.getActividad())) {
-                        if (f.equals(c.getSlot().getFranja())) asistentes++;
+                        if (filters.getNivel() == null || filters.getNivel().equals(c.getNivel())) {
+                            if (filters.getAlumno() == null) plazas += c.getCapacidad();
+                        }
+                    }
+                }
+            }
+
+            if (Ver.Real.equals(filters.getVer())) {
+                for (Asistencia a : asistencias) if (a.isActiva()) {
+                    if (d.equals(a.getClase().getFecha()) && f.equals(a.getClase().getClase().getSlot().getFranja())) {
+                        if (filters.getActividad() == null || filters.getActividad().equals(a.getClase().getClase().getActividad())) {
+                            if (filters.getNivel() == null || filters.getNivel().equals(a.getClase().getClase().getNivel())) {
+                                if (filters.getAlumno() == null || filters.getAlumno().equals(a.getAlumno()))
+                                    asistentes++;
+                            }
+                        }
+                    }
+                }
+            } else {
+                for (Alumno a : alumnos) if (filters.getAlumno() == null || filters.getAlumno().equals(a)) {
+                    for (Clase c : a.getMatricula()) if (diaSemana.equals(c.getSlot().getDia())) {
+                        if (filters.getActividad() == null || filters.getActividad().equals(c.getActividad())) {
+                            if (filters.getNivel() == null || filters.getNivel().equals(c.getNivel())) {
+                                if (f.equals(c.getSlot().getFranja())) asistentes++;
+                            }
+                        }
                     }
                 }
             }
         }
 
-        return new CeldaPlaning(f, filters.getAlumno(), filters.getActividad(), filters.isMatricula(), d, plazas, asistentes);
+        return new CeldaPlaning(f, filters.getAlumno(), filters.getActividad(), nivel, filters.getVer(), d, plazas, asistentes);
     }
 
     @Override
@@ -140,6 +175,10 @@ public class PlaningView implements RpcView<PlaningView, LineaPlaning> {
         search();
     }
 
+    @Action(icon = VaadinIcons.PLUS, order = 3)
+    public NuevaClaseForm añadirClaseSuelta() {
+        return new NuevaClaseForm();
+    }
 
     @Override
     public void buildColumns(Grid<LineaPlaning> grid) {
@@ -193,7 +232,7 @@ public class PlaningView implements RpcView<PlaningView, LineaPlaning> {
     }
 
     private String getState(CeldaPlaning c) {
-        return "" + c.getFecha() + "_" + (c.getActividad() != null?c.getActividad().getId():"n") + "_" + (c.getAlumno() != null?c.getAlumno().getId():"n") + "_" + (c.getFranja() != null?c.getFranja().getId():"n") + "_" + (c.isMatricula()?"t":"f");
+        return "" + c.getFecha() + "_" + (c.getActividad() != null?c.getActividad().getId():"n") + "_" + (c.getAlumno() != null?c.getAlumno().getId():"n") + "_" + (c.getFranja() != null?c.getFranja().getId():"n") + "_" + (Ver.Matrícula.equals(c.getVer())?"t":"f") + "_" + (c.getNivel() != null?c.getNivel().getId():"n");
     }
 
 
@@ -213,8 +252,9 @@ public class PlaningView implements RpcView<PlaningView, LineaPlaning> {
             Actividad actividad = "n".equals(step.split("_")[1])?null:Helper.find(Actividad.class, Long.parseLong(step.split("_")[1]));
             Alumno alumno = "n".equals(step.split("_")[2])?null:Helper.find(Alumno.class, Long.parseLong(step.split("_")[2]));
             Franja franja = Helper.find(Franja.class, Long.parseLong(step.split("_")[3]));
-            boolean matricula = "t".equals(step.split("_")[4]);
-            CeldaPlaning r = new CeldaPlaning(franja, alumno, actividad, matricula, fecha, 0, 0);
+            Ver ver = "t".equals(step.split("_")[4])?Ver.Matrícula:Ver.Real;
+            Nivel nivel = "n".equals(step.split("_")[1])?null:Helper.find(Nivel.class, Long.parseLong(step.split("_")[1]));
+            CeldaPlaning r = new CeldaPlaning(franja, alumno, actividad, nivel, ver, fecha, 0, 0);
             return new ApuntadosView(r);
         } catch (Throwable e) {
             MDD.alert(e);

@@ -1,6 +1,8 @@
 package io.mateu.planing;
 
 import com.vaadin.data.provider.QuerySortOrder;
+import com.vaadin.ui.Grid;
+import com.vaadin.ui.StyleGenerator;
 import io.mateu.mdd.core.annotations.Output;
 import io.mateu.mdd.core.interfaces.RpcView;
 import io.mateu.mdd.core.util.Helper;
@@ -26,6 +28,8 @@ public class ApuntadosView implements RpcView<ApuntadosView, Apuntado> {
     @Output
     private final Actividad actividad;
     @Output
+    private final Nivel nivel;
+    @Output
     private final boolean matricula;
     @Output
     private final Franja franja;
@@ -35,7 +39,8 @@ public class ApuntadosView implements RpcView<ApuntadosView, Apuntado> {
         this.fin = celda.getFecha();
         this.alumno = celda.getAlumno();
         this.actividad = celda.getActividad();
-        this.matricula = celda.isMatricula();
+        this.nivel = celda.getNivel();
+        this.matricula = Ver.Matrícula.equals(celda.getVer());
         this.franja = celda.getFranja();
     }
 
@@ -44,7 +49,8 @@ public class ApuntadosView implements RpcView<ApuntadosView, Apuntado> {
         this.fin = linea.getViernes().getFecha();
         this.alumno = linea.getLunes().getAlumno();
         this.actividad = linea.getLunes().getActividad();
-        this.matricula = linea.getLunes().isMatricula();
+        this.nivel = linea.getLunes().getNivel();
+        this.matricula = Ver.Matrícula.equals(linea.getLunes().getVer());
         this.franja = linea.getLunes().getFranja();
     }
 
@@ -117,7 +123,7 @@ public class ApuntadosView implements RpcView<ApuntadosView, Apuntado> {
 
     @Override
     public String toString() {
-        return (alumno != null?"" + alumno.getNombre() + " ":"Apuntados ") + inicio.format(DateTimeFormatter.ofPattern("dd MMM")) + (!inicio.equals(fin)?" a " + fin.format(DateTimeFormatter.ofPattern("dd MMM")):"")
+        return (alumno != null?"" + alumno + " ":"Apuntados ") + inicio.format(DateTimeFormatter.ofPattern("dd MMM")) + (!inicio.equals(fin)?" a " + fin.format(DateTimeFormatter.ofPattern("dd MMM")):"")
                 + (franja != null?" " + franja:"")
                 + (actividad != null?" " + actividad:"")
                 ;
@@ -131,5 +137,27 @@ public class ApuntadosView implements RpcView<ApuntadosView, Apuntado> {
     @Override
     public Object onEdit(Apuntado row) {
         return row.getAsistencia() != null?row.getAsistencia():row.getAlumno();
+    }
+
+
+    @Override
+    public void decorateGrid(Grid<Apuntado> grid) {
+        grid.getColumns().forEach(col -> {
+
+            StyleGenerator old = ((Grid.Column) col).getStyleGenerator();
+
+            ((Grid.Column)col).setStyleGenerator(new StyleGenerator() {
+                @Override
+                public String apply(Object o) {
+                    String s = null;
+                    if (old != null) s = old.apply(o);
+
+                    if (o instanceof Apuntado) {
+                        if (!((Apuntado)o).isActivo()) s = (s != null)?s + " cancelled":"cancelled";
+                    }
+                    return s;
+                }
+            });
+        });
     }
 }

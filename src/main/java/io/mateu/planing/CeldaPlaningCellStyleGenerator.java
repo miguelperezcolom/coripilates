@@ -2,6 +2,8 @@ package io.mateu.planing;
 
 import io.mateu.mdd.core.interfaces.ICellStyleGenerator;
 
+import java.time.LocalDate;
+
 public class CeldaPlaningCellStyleGenerator implements ICellStyleGenerator {
     @Override
     public String getStyles(Object row, Object value) {
@@ -11,13 +13,16 @@ public class CeldaPlaningCellStyleGenerator implements ICellStyleGenerator {
 
         if (s != null) {
 
-
-            if (s.getPlazas() == 0 && s.getAsistentes() == 0) {
-                css += " cell-void";
+            if (s.getFecha().isBefore(LocalDate.now())) {
+                css += "  mdd-lightsteelblue-bgd";
             } else {
-                if (s.getPlazas() > s.getAsistentes()) css += " success";
-                else if (s.getPlazas() == s.getAsistentes()) css += " mdd-orange-bgd";
-                else if (s.getPlazas() < s.getAsistentes()) css += " danger";
+
+                if (s.getPlazas() == 0 && s.getAsistentes() == 0) {
+                    css += " cell-void";
+                } else {
+                    if (s.getPlazas() > s.getAsistentes()) css += " success";
+                    else if (s.getPlazas() == s.getAsistentes()) css += " mdd-orange-bgd";
+                    else if (s.getPlazas() < s.getAsistentes()) css += " danger";
 
                 /*
 
@@ -27,6 +32,8 @@ public class CeldaPlaningCellStyleGenerator implements ICellStyleGenerator {
                 else if (s.getMaxEstadoValidacion() >= 2) css += "cell-invalid";
 
                 */
+                }
+
             }
 
         }
