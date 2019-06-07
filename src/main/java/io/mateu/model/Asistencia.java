@@ -46,7 +46,7 @@ public class Asistencia {
     private boolean activa = true;
 
     @ManyToOne@NotNull
-    @SearchFilter@ColumnWidth(450)
+    @SearchFilter@ColumnWidth(450)@Width("600px")
     private ClaseFecha clase;
 
     @Ignored

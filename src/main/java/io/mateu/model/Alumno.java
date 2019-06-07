@@ -74,6 +74,9 @@ public class Alumno {
     @Ignored
     private transient Set<Clase> preMatricula = new HashSet<>();
 
+    public void setMatricula(Set<Clase> matricula) {
+        this.matricula = matricula;
+    }
 
     public void actualizarSaldo() {
         setSaldo(0);
@@ -124,6 +127,16 @@ public class Alumno {
                 throwable.printStackTrace();
             }
         });
+    }
+
+    @Action(saveAfter = true)
+    public void resetAsistencias(EntityManager em) {
+        new ArrayList<>(asistencias).forEach(a -> {
+            a.getClase().getAsistencias().remove(a);
+            em.remove(a);
+            asistencias.remove(a);
+        });
+        actualizarAsistencias(em, new HashSet<>(), isActivo());
     }
 
     private void actualizarAsistencias(EntityManager em, Set<Clase> preMatriculax, boolean preActivox) {
@@ -193,6 +206,7 @@ public class Alumno {
                                         }
 
                                         if (a == null) {
+                                            a = new Asistencia();
                                             a.setAlumno(this);
                                             asistencias.add(a);
                                             a.setClase(f);
@@ -228,7 +242,10 @@ public class Alumno {
 
                     asistencias.removeAll(borrar);
 
-                    borrar.forEach(a -> em.remove(a));
+                    borrar.forEach(a -> {
+                        a.getClase().getAsistencias().remove(a);
+                        em.remove(a);
+                    });
 
                 }
             });
