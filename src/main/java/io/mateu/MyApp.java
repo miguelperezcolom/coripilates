@@ -7,8 +7,7 @@ import com.vaadin.ui.Image;
 import io.mateu.mdd.core.MDD;
 import io.mateu.mdd.core.annotations.Action;
 import io.mateu.mdd.core.annotations.SubApp;
-import io.mateu.mdd.core.app.AbstractArea;
-import io.mateu.mdd.core.app.SimpleMDDApplication;
+import io.mateu.mdd.core.app.*;
 import io.mateu.mdd.core.interfaces.RpcView;
 import io.mateu.model.*;
 import io.mateu.planing.PlaningView;
@@ -52,6 +51,11 @@ public class MyApp extends SimpleMDDApplication {
         return Pago.class;
     }
 
+    @Action(order = 8, icon = VaadinIcons.CHART)
+    public ResumenPagosView resumen() {
+        return new ResumenPagosView();
+    }
+
     /*
     @Action(order = 30, icon = VaadinIcons.USER)
     public Class usuarios() {
@@ -69,5 +73,10 @@ public class MyApp extends SimpleMDDApplication {
     @Override
     public String getName() {
         return "CoriPilates";
+    }
+
+    @Override
+    public AbstractAction getDefaultAction() {
+        return new MDDOpenCustomComponentAction("Resumen", Home.class);
     }
 }

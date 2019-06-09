@@ -112,15 +112,28 @@ public class Alumno {
 
     @PostPersist@PostUpdate
     public void post() {
-        WorkflowEngine.add(() -> {
+        if (updateRqTime != null) WorkflowEngine.add(() -> {
             try {
                 Helper.transact(em -> {
 
                     Alumno a = em.find(Alumno.class, getId());
 
-                    a.actualizarSaldo();
+                    if (a.getUpdateRqTime() != null) {
 
-                    a.actualizarAsistencias(em, preMatricula, preActivo);
+                        try {
+                            a.actualizarSaldo();
+                        } catch (Throwable e) {
+                            e.printStackTrace();
+                        }
+
+                        try {
+                            a.actualizarAsistencias(em, preMatricula, preActivo);
+                        } catch (Throwable e) {
+                            e.printStackTrace();
+                        }
+
+                        a.setUpdateRqTime(null);
+                    }
 
                 });
             } catch (Throwable throwable) {
@@ -137,6 +150,13 @@ public class Alumno {
             asistencias.remove(a);
         });
         actualizarAsistencias(em, new HashSet<>(), isActivo());
+    }
+
+    @Action
+    public static void actualizarSaldos() throws Throwable {
+        Helper.transact(em -> {
+            em.createQuery("select x from " + Alumno.class.getName() + " x order by x.id", Alumno.class).getResultList().forEach(a -> a.setUpdateRqTime(LocalDateTime.now()));
+        });
     }
 
     private void actualizarAsistencias(EntityManager em, Set<Clase> preMatriculax, boolean preActivox) {

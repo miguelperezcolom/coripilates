@@ -180,6 +180,11 @@ public class PlaningView implements RpcView<PlaningView, LineaPlaning> {
         return new NuevaClaseForm();
     }
 
+    @Action(icon = VaadinIcons.USER, order = 4)
+    public PlaningDetallado detallar() {
+        return new PlaningDetallado(this);
+    }
+
     @Override
     public void buildColumns(Grid<LineaPlaning> grid) {
 
