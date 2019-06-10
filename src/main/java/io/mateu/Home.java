@@ -23,9 +23,13 @@ public class Home extends VerticalLayout {
 
             addComponent(new Label("" + alumnos.stream().filter(a -> a.isActivo()).count() + " alumnos activos"));
 
-            addComponent(new Label("" + alumnos.stream().filter(a -> a.getSaldo() < 0).count() + " alumnos pendiente pago"));
+            addComponent(new Label("" + alumnos.stream().filter(a -> a.getSaldo() < 0).count() + " alumnos con saldos pendientes"));
 
             addComponent(new Label("" + new DecimalFormat("##,###,###,###,##0.00").format(alumnos.stream().filter(a -> a.getSaldo() < 0).map(a -> -1d * a.getSaldo()).reduce((t, v) -> t + v).orElse(0.0)) + " euros pendiente cobro"));
+
+            addComponent(new Label("" + alumnos.stream().filter(a -> a.isActivo() && a.getSaldo() < 0).count() + " alumnos pendiente pago"));
+
+            addComponent(new Label("" + new DecimalFormat("##,###,###,###,##0.00").format(alumnos.stream().filter(a -> a.isActivo() && a.getSaldo() < 0).map(a -> -1d * a.getSaldo()).reduce((t, v) -> t + v).orElse(0.0)) + " euros pendiente cobro de alumnos activos"));
 
             addComponentsAndExpand(new Label(""));
 

@@ -1,6 +1,7 @@
 package io.mateu.model;
 
 import com.google.common.base.Strings;
+import com.vaadin.icons.VaadinIcons;
 import io.mateu.mdd.core.annotations.*;
 import io.mateu.mdd.core.util.Helper;
 import io.mateu.mdd.core.workflow.WorkflowEngine;
@@ -76,6 +77,7 @@ public class Alumno {
 
     public void setMatricula(Set<Clase> matricula) {
         this.matricula = matricula;
+        setUpdateRqTime(LocalDateTime.now());
     }
 
     public void actualizarSaldo() {
@@ -142,7 +144,7 @@ public class Alumno {
         });
     }
 
-    @Action(saveAfter = true)
+    @Action(saveAfter = true, icon = VaadinIcons.WARNING)
     public void resetAsistencias(EntityManager em) {
         new ArrayList<>(asistencias).forEach(a -> {
             a.getClase().getAsistencias().remove(a);
@@ -156,6 +158,24 @@ public class Alumno {
     public static void actualizarSaldos() throws Throwable {
         Helper.transact(em -> {
             em.createQuery("select x from " + Alumno.class.getName() + " x order by x.id", Alumno.class).getResultList().forEach(a -> a.setUpdateRqTime(LocalDateTime.now()));
+        });
+    }
+
+    @Action(order = 200, icon = VaadinIcons.WARNING)
+    public static void resetTodasAsistencias() throws Throwable {
+        Helper.transact(em -> {
+            em.createQuery("select x from " + Alumno.class.getName() + " x order by x.id", Alumno.class).getResultList().forEach(a ->
+                            //        a.setUpdateRqTime(LocalDateTime.now())
+                    {
+                        new ArrayList<>(a.getAsistencias()).stream().filter(as -> as.isActiva() && as.getUltimoCambio() == null).forEach(as -> {
+                            as.getClase().getAsistencias().remove(as);
+                            em.remove(as);
+                            a.getAsistencias().remove(as);
+                        });
+                        a.actualizarAsistencias(em, new HashSet<>(), a.isActivo());
+
+                    }
+            );
         });
     }
 

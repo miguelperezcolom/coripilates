@@ -4,6 +4,7 @@ import com.vaadin.data.provider.DataProvider;
 import com.vaadin.data.provider.ListDataProvider;
 import io.mateu.mdd.core.MDD;
 import io.mateu.mdd.core.annotations.Action;
+import io.mateu.mdd.core.annotations.Width;
 import io.mateu.mdd.core.util.Helper;
 import io.mateu.mdd.vaadinport.vaadin.MDDUI;
 import io.mateu.model.*;
@@ -22,7 +23,7 @@ public class NuevaClaseForm {
     @NotNull
     private Alumno alumno;
 
-    @NotNull
+    @NotNull@Width("600px")
     private ClaseFecha clase;
 
 
