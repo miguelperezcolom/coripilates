@@ -49,6 +49,9 @@ public class Asistencia {
     @SearchFilter@ColumnWidth(450)@Width("600px")
     private ClaseFecha clase;
 
+    @TextArea
+    private String comentarios;
+
     @Ignored
     private transient ClaseFecha clasePre;
 

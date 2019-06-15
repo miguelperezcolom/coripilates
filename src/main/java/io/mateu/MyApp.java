@@ -56,6 +56,11 @@ public class MyApp extends SimpleMDDApplication {
         return new ResumenPagosView();
     }
 
+    @Action(order = 9, icon = VaadinIcons.CHECK)
+    public Check check() {
+        return new Check();
+    }
+
     /*
     @Action(order = 30, icon = VaadinIcons.USER)
     public Class usuarios() {

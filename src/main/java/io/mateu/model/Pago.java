@@ -27,6 +27,11 @@ public class Pago {
     @ManyToOne@NotNull
     private Alumno alumno;
 
+    @NotNull
+    private FormaPago formaPago;
+
+    private boolean ajusteCuota;
+
     private String concepto;
 
     @Money@Balance

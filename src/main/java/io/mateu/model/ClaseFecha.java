@@ -2,6 +2,7 @@ package io.mateu.model;
 
 import io.mateu.mdd.core.annotations.Ignored;
 import io.mateu.mdd.core.annotations.Order;
+import io.mateu.mdd.core.annotations.TextArea;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -29,6 +30,9 @@ public class ClaseFecha implements Comparable<ClaseFecha> {
 
     @NotNull
     private LocalDate fecha;
+
+    @TextArea
+    private String comentarios;
 
 
     @OneToMany(mappedBy = "clase")@Ignored

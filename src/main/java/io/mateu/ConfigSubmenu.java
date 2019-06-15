@@ -67,6 +67,7 @@ public class ConfigSubmenu {
                     Pago p = new Pago();
                     p.setAlumno(a);
                     p.setConcepto("Cuota " + LocalDate.now().format(DateTimeFormatter.ofPattern("MMM yy")));
+                    p.setFormaPago(FormaPago.Cuota);
                     p.setImporte(Helper.roundEuros(-1d * a.getCuota()));
                     em.persist(p);
                 }

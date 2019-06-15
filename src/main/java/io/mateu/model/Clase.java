@@ -12,6 +12,8 @@ import lombok.Setter;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -96,5 +98,101 @@ public class Clase {
     public void pre() {
         order = Long.parseLong("" + slot.getDia().ordinal() + "" + slot.getFranja().getDesde().format(DateTimeFormatter.ofPattern("HHmm")));
     }
+
+    @Action
+    public void crearClasesParaEsteMes() throws Throwable {
+            Helper.transact(em -> {
+
+                List<ClaseFecha> clases = (List<ClaseFecha>) em.createQuery("select x from " + ClaseFecha.class.getName() + " x where x.clase = :c").setParameter("c", this).getResultList();
+
+                List<Festivo> festivos = em.createQuery("select x from " + Festivo.class.getName() + " x").getResultList();
+                List<Vacaciones> vacaciones = em.createQuery("select x from " + Vacaciones.class.getName() + " x").getResultList();
+
+
+                ((List<Clase>)em.createQuery("select x from " + Clase.class.getName() + " x").getResultList()).forEach(c -> {
+
+                    List<ClaseFecha> clasesFecha = em.createQuery("select x from " + ClaseFecha.class.getName() + " x where x.clase = :c").setParameter("c", c).getResultList();
+
+
+                    LocalDate hoy = LocalDate.now();
+                    LocalDate d = hoy.plusDays(0);LocalDate.of(hoy.getYear(), hoy.getMonth(), 1);
+                    while (d.getMonth().equals(hoy.getMonth())) {
+
+                        boolean laborable = true;
+
+                        if (laborable) for (Festivo v : festivos) {
+                            if (d.equals(v.getFecha())) {
+                                laborable = false;
+                                break;
+                            }
+                        }
+
+                        if (laborable) for (Vacaciones v : vacaciones) {
+                            if (!d.isBefore(v.getInicio()) && !d.isAfter(v.getFin())) {
+                                laborable = false;
+                                break;
+                            }
+                        }
+
+                        if (laborable) {
+
+                            boolean diaOk = false;
+                            if (DiaSemana.LUNES.equals(c.getSlot().getDia()) && DayOfWeek.MONDAY.equals(d.getDayOfWeek())) diaOk = true;
+                            if (DiaSemana.MARTES.equals(c.getSlot().getDia()) && DayOfWeek.TUESDAY.equals(d.getDayOfWeek())) diaOk = true;
+                            if (DiaSemana.MIERCOLES.equals(c.getSlot().getDia()) && DayOfWeek.WEDNESDAY.equals(d.getDayOfWeek())) diaOk = true;
+                            if (DiaSemana.JUEVES.equals(c.getSlot().getDia()) && DayOfWeek.THURSDAY.equals(d.getDayOfWeek())) diaOk = true;
+                            if (DiaSemana.VIERNES.equals(c.getSlot().getDia()) && DayOfWeek.FRIDAY.equals(d.getDayOfWeek())) diaOk = true;
+                            if (diaOk) {
+
+
+                                ClaseFecha f = null;
+                                for (ClaseFecha x : clasesFecha) {
+                                    if (x.getFecha().equals(d)) {
+                                        f = x;
+                                        break;
+                                    }
+                                }
+
+                                if (f == null) {
+                                    f = new ClaseFecha();
+                                    f.setClase(c);
+                                    f.setFecha(d);
+                                    em.persist(f);
+
+
+                                    LocalDate finalD = d;
+                                    ClaseFecha finalF = f;
+                                    ((List<Alumno>)em.createQuery("select x from " + Alumno.class.getName() + " x").getResultList()).forEach(a -> {
+                                        if (a.isActivo() && (a.getAntiguedad() == null || finalD.isAfter(a.getAntiguedad()))) a.getMatricula().forEach(cl -> {
+
+                                            if (cl.equals(c)) {
+                                                Asistencia s = new Asistencia();
+                                                s.setActiva(true);
+                                                s.setAlumno(a);
+                                                a.getAsistencias().add(s);
+                                                s.setClase(finalF);
+                                                s.setClaseOriginal(finalF);
+                                                finalF.getAsistencias().add(s);
+                                                s.setHistorial("");
+                                                em.persist(s);
+                                            }
+
+                                        });
+                                    });
+                                }
+
+                            }
+
+                        }
+
+                        d = d.plusDays(1);
+                    }
+
+                });
+
+
+
+            });
+        }
 
 }

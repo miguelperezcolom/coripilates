@@ -29,7 +29,7 @@ public class Alumno {
     private int version;
 
     @Ignored
-    private LocalDateTime updateRqTime;
+    private LocalDateTime updateRqTime = LocalDateTime.now();
 
     @Output@NotInList
     private LocalDateTime creado = LocalDateTime.now();
@@ -42,6 +42,11 @@ public class Alumno {
 
     @ColumnWidth(80)
     private boolean activo = true;
+
+    public void setActivo(boolean activo) {
+        this.activo = activo;
+        setUpdateRqTime(LocalDateTime.now());
+    }
 
     @ColumnWidth(100)
     private double cuota;
@@ -103,7 +108,7 @@ public class Alumno {
 
     @Override
     public String toString() {
-        return nombre != null?nombre + " (" + (nivel != null && !Strings.isNullOrEmpty(nivel.getNombre())?nivel.getNombre().substring(0, 1):"-") + ")":getClass().getSimpleName() + " " + id;
+        return (nombre != null?nombre + " (" + (nivel != null && !Strings.isNullOrEmpty(nivel.getNombre())?nivel.getNombre().substring(0, 1):"-") + ")":getClass().getSimpleName() + " " + id) + (activo?"":"X");
     }
 
     @PostLoad
