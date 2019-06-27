@@ -6,7 +6,10 @@
       <p class="help is-danger">{{error}}</p>
     </div>
     <div class="control">
-    <button @click="comprobar" class="button is-primary">Entrar</button>
+      <div class="buttons">
+        <button @click="comprobar" class="button is-primary">Entrar</button>
+        <button @click="resetpassword" class="button is-warning">Solicitar reset password</button>
+      </div>
     </div>
 
   </div>
@@ -40,6 +43,22 @@
                     })
                     .catch(e => {
                         console.log(e)
+                    })
+            },
+            resetpassword: function() {
+                axios.post(baseUrl + '/resetpassword', {
+                    idUsuario: this.idUsuario,
+                })
+                    .then(response => {
+                        if (response.data.result == 'ok') {
+                            autenticado = true;
+                            this.$router.push(response.data.url);
+                        } else {
+                            this.error = response.data.msg;
+                        }
+                    })
+                    .catch(e => {
+                        this.error = e;
                     })
             },
         },
