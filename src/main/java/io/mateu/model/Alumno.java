@@ -3,6 +3,7 @@ package io.mateu.model;
 import com.google.common.base.Strings;
 import com.vaadin.icons.VaadinIcons;
 import io.mateu.mdd.core.annotations.*;
+import io.mateu.mdd.core.model.util.EmailHelper;
 import io.mateu.mdd.core.util.Helper;
 import io.mateu.mdd.core.workflow.WorkflowEngine;
 import lombok.Getter;
@@ -13,10 +14,7 @@ import javax.validation.constraints.NotNull;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Entity@Getter@Setter
 public class Alumno {
@@ -74,6 +72,16 @@ public class Alumno {
     @OneToMany(mappedBy = "alumno")@Ignored
     private List<Asistencia> asistencias = new ArrayList<>();
 
+    @Ignored
+    private String password;
+
+    @Ignored
+    private String passwordResetKey;
+
+    private boolean appHabilitada;
+
+    @Output
+    private LocalDateTime ultimoAcceso;
 
     @Ignored
     private boolean preActivo;
@@ -301,4 +309,37 @@ public class Alumno {
     }
 
 
+    public String getAppId() {
+        return Base64.getEncoder().encodeToString(("" + id).getBytes());
+    }
+
+    @Action
+    public static void enviarEmailAccesoApp(EntityManager em, Set<Alumno> seleccion) throws Throwable {
+        for (Alumno a : seleccion) {
+            a.enviarEmailAccesoApp();
+        }
+    }
+
+    @Action(order = 10, saveAfter = true)
+    public void enviarEmailAccesoApp() throws Throwable {
+        setAppHabilitada(true);
+        EmailHelper.sendEmail(getEmail(), "Acceso a CoriPilates", "<p>Estimado " + getNombre() + ",</p>" +
+                "<p>puedes acceder a nuestra app en " + System.getProperty("urlapp", "http://localhost:8080") + "/" + getAppId() + "/"  +".</p>" +
+                "<pGracias por confiar en nosotros,</p>" +
+                "<p>CoriPilates</p>", false);
+    }
+
+    @Action(order = 20, saveAfter = true)
+    public void resetPassword() throws Throwable {
+        setPassword(null);
+    }
+
+    @Action(order = 30, saveAfter = true)
+    public void enviarEmailResetPasswordApp() throws Throwable {
+        setPasswordResetKey(Base64.getEncoder().encodeToString(LocalDateTime.now().toString().getBytes()));
+        EmailHelper.sendEmail(getEmail(), "CoriPilates password reset", "<p>Estimado " + getNombre() + ",</p>" +
+                "<p>Puedes resetear tu password en " + System.getProperty("urlapp", "http://localhost:8080") + "/" + getAppId() + "/reset/" + getPasswordResetKey()  +".</p>" +
+                "<pGracias por confiar en nosotros,</p>" +
+                "<p>CoriPilates</p>", false);
+    }
 }

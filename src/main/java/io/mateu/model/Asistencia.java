@@ -18,6 +18,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 
@@ -61,7 +62,13 @@ public class Asistencia {
     @Ignored@Column(name = "_order")@Order
     private long order;
 
+
+
     public DataProvider getClaseDataProvider() {
+        return new ListDataProvider(getAlternativas());
+    }
+
+    public List<ClaseFecha> getAlternativas() {
         List<ClaseFecha> l = new ArrayList<>();
 
         try {
@@ -71,7 +78,12 @@ public class Asistencia {
                 List<Vacaciones> vacaciones = em.createQuery("select x from " + Vacaciones.class.getName() + " x").getResultList();
 
                 List<ClaseFecha> todas = em.createQuery("select x from " + ClaseFecha.class.getName() + " x where x.fecha >= :h").setParameter("h", LocalDate.now()).getResultList();
-                for (ClaseFecha x : todas) {
+                for (ClaseFecha x : todas) if (
+                        x.getClase().getActividad().equals(getClase().getClase().getActividad())
+                                && !x.equals(getClase())
+                        && x.getFecha().atTime(x.getClase().getSlot().getFranja().getDesde()).isAfter(LocalDateTime.now())
+                        ) {
+
                     boolean laborable = true;
 
                     if (laborable) for (Festivo v : festivos) {
@@ -88,7 +100,9 @@ public class Asistencia {
                         }
                     }
 
-                    if (laborable && x.getAsistencias().size() < x.getClase().getCapacidad()) {
+                    int alumnos = (int) x.getAsistencias().stream().filter(a -> a.isActiva() && a.getAlumno().isActivo()).count();
+
+                    if (laborable && alumnos < x.getClase().getCapacidad()) {
                         l.add(x);
                     }
                 }
@@ -100,7 +114,7 @@ public class Asistencia {
             MDD.alert(throwable);
         }
 
-        return new ListDataProvider(l);
+        return l;
     }
 
     @Output
